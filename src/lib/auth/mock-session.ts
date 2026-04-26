@@ -1,21 +1,14 @@
 import { cookies } from "next/headers";
 import type { Role, Session } from "@/lib/auth/types";
+import { getSessionCookieName, signSessionToken, verifySessionToken } from "@/lib/auth/jwt";
 
-const COOKIE_NAME = "adflow_session";
-
-function safeJsonParse<T>(value: string): T | null {
-  try {
-    return JSON.parse(value) as T;
-  } catch {
-    return null;
-  }
-}
+const COOKIE_NAME = getSessionCookieName();
 
 export async function getSession(): Promise<Session | null> {
   const jar = await cookies();
-  const raw = jar.get(COOKIE_NAME)?.value;
-  if (!raw) return null;
-  return safeJsonParse<Session>(raw);
+  const token = jar.get(COOKIE_NAME)?.value;
+  if (!token) return null;
+  return await verifySessionToken(token);
 }
 
 export async function setSession(input: {
@@ -33,10 +26,11 @@ export async function setSession(input: {
     },
     createdAt: new Date().toISOString(),
   };
+  const token = await signSessionToken(session);
 
   jar.set({
     name: COOKIE_NAME,
-    value: JSON.stringify(session),
+    value: token,
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -44,6 +38,21 @@ export async function setSession(input: {
     maxAge: 60 * 60 * 24 * 7,
   });
 
+  return session;
+}
+
+export async function setExistingSession(session: Session) {
+  const jar = await cookies();
+  const token = await signSessionToken(session);
+  jar.set({
+    name: COOKIE_NAME,
+    value: token,
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
+  });
   return session;
 }
 

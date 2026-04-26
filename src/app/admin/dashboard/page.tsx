@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type PaymentRow = {
   id: string;
@@ -16,36 +17,45 @@ type PaymentRow = {
   status: "Payment Submitted" | "Verified" | "Rejected";
 };
 
-const seed: PaymentRow[] = [
-  {
-    id: "pay_201",
-    adTitle: "Logo design for startups",
-    amount: "$24",
-    method: "Bank transfer",
-    ref: "TRX-8891",
-    status: "Payment Submitted",
-  },
-  {
-    id: "pay_202",
-    adTitle: "Apartment for rent • DHA",
-    amount: "$59",
-    method: "Easypaisa",
-    ref: "EP-1245",
-    status: "Payment Submitted",
-  },
-];
-
 export default function AdminDashboardPage() {
-  const [rows, setRows] = React.useState(seed);
+  const [rows, setRows] = React.useState<PaymentRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
 
-  function verify(id: string) {
+  React.useEffect(() => {
+    fetch("/api/admin/payment-queue")
+      .then((r) => r.json())
+      .then((data) => {
+        const mapped: PaymentRow[] = (data.items ?? []).map((row: any) => ({
+          id: row.id,
+          adTitle: row.ads?.title ?? "Untitled ad",
+          amount: `$${row.amount}`,
+          method: row.method,
+          ref: row.transaction_ref,
+          status: "Payment Submitted",
+        }));
+        setRows(mapped);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function verify(id: string) {
+    await fetch(`/api/admin/payments/${id}/verify`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "approve" }),
+    });
     setRows((prev) =>
       prev.map((r) => (r.id === id ? { ...r, status: "Verified" } : r))
     );
     toast.success("Payment verified", { description: "Ad can be scheduled or published." });
   }
 
-  function reject(id: string) {
+  async function reject(id: string) {
+    await fetch(`/api/admin/payments/${id}/verify`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "reject", note: "Proof mismatch" }),
+    });
     setRows((prev) =>
       prev.map((r) => (r.id === id ? { ...r, status: "Rejected" } : r))
     );
@@ -78,50 +88,65 @@ export default function AdminDashboardPage() {
           </div>
           <Badge variant="secondary">{rows.length} records</Badge>
         </div>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Ad</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Method</TableHead>
-              <TableHead>Reference</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((r) => (
-              <TableRow key={r.id}>
-                <TableCell className="font-medium">{r.adTitle}</TableCell>
-                <TableCell>{r.amount}</TableCell>
-                <TableCell>{r.method}</TableCell>
-                <TableCell className="font-mono text-xs">{r.ref}</TableCell>
-                <TableCell>
-                  <Badge variant={r.status === "Verified" ? "default" : "secondary"}>{r.status}</Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => verify(r.id)}
-                      disabled={r.status !== "Payment Submitted"}
-                    >
-                      Verify
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => reject(r.id)}
-                      disabled={r.status !== "Payment Submitted"}
-                    >
-                      Reject
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
+        {loading ? (
+          <div className="grid gap-3 p-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1.4fr] gap-3">
+                <Skeleton className="h-8 rounded-lg skeleton-sheen" />
+                <Skeleton className="h-8 rounded-lg skeleton-sheen" />
+                <Skeleton className="h-8 rounded-lg skeleton-sheen" />
+                <Skeleton className="h-8 rounded-lg skeleton-sheen" />
+                <Skeleton className="h-8 rounded-lg skeleton-sheen" />
+                <Skeleton className="h-8 rounded-lg skeleton-sheen" />
+              </div>
             ))}
-          </TableBody>
-        </Table>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Ad</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Method</TableHead>
+                <TableHead>Reference</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell className="font-medium">{r.adTitle}</TableCell>
+                  <TableCell>{r.amount}</TableCell>
+                  <TableCell>{r.method}</TableCell>
+                  <TableCell className="font-mono text-xs">{r.ref}</TableCell>
+                  <TableCell>
+                    <Badge variant={r.status === "Verified" ? "default" : "secondary"}>{r.status}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => verify(r.id)}
+                        disabled={r.status !== "Payment Submitted"}
+                      >
+                        Verify
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => reject(r.id)}
+                        disabled={r.status !== "Payment Submitted"}
+                      >
+                        Reject
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </Card>
     </div>
   );

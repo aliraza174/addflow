@@ -8,7 +8,6 @@ export default async function DashboardRedirectPage() {
   const role = session.user.role;
   if (role === "client") redirect("/client/dashboard");
   if (role === "moderator") redirect("/moderator/review-queue");
-  if (role === "admin") redirect("/admin/dashboard");
-  redirect("/super/system");
+  redirect("/admin/dashboard");
 }
 

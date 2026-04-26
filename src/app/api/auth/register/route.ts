@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { setSession } from "@/lib/auth/mock-session";
+import { setExistingSession } from "@/lib/auth/mock-session";
+import { createUser } from "@/lib/auth/users";
 
 const schema = z.object({
   name: z.string().min(2),
@@ -18,13 +19,25 @@ export async function POST(req: Request) {
     );
   }
 
-  // Mock register: create a client session.
-  const session = await setSession({
-    email: parsed.data.email,
-    name: parsed.data.name,
-    role: "client",
-  });
+  try {
+    const user = await createUser({
+      name: parsed.data.name,
+      email: parsed.data.email,
+      password: parsed.data.password,
+      role: "client",
+    });
 
-  return NextResponse.json({ session });
+    const session = await setExistingSession({
+      user,
+      createdAt: new Date().toISOString(),
+    });
+
+    return NextResponse.json({ session });
+  } catch (error: any) {
+    if (error?.code === "23505") {
+      return NextResponse.json({ error: "Email already exists" }, { status: 409 });
+    }
+    return NextResponse.json({ error: "Registration failed" }, { status: 500 });
+  }
 }
 

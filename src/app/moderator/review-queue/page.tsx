@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type QueueItem = {
   id: string;
@@ -17,42 +18,43 @@ type QueueItem = {
   submittedAt: string;
 };
 
-const seed: QueueItem[] = [
-  {
-    id: "ad_101",
-    title: "Apartment for rent • DHA Phase 6",
-    category: "Real Estate",
-    city: "Karachi",
-    media: "image",
-    submittedAt: "2h ago",
-  },
-  {
-    id: "ad_102",
-    title: "iPhone 14 Pro • Like new",
-    category: "Electronics",
-    city: "Lahore",
-    media: "youtube",
-    submittedAt: "1d ago",
-  },
-  {
-    id: "ad_103",
-    title: "Cleaning services • Weekly",
-    category: "Services",
-    city: "Islamabad",
-    media: "image",
-    submittedAt: "3d ago",
-  },
-];
-
 export default function ModeratorReviewQueuePage() {
-  const [items, setItems] = React.useState(seed);
+  const [items, setItems] = React.useState<QueueItem[]>([]);
+  const [loading, setLoading] = React.useState(true);
 
-  function approve(id: string) {
+  React.useEffect(() => {
+    fetch("/api/moderator/review-queue")
+      .then((r) => r.json())
+      .then((data) => {
+        const mapped: QueueItem[] = (data.items ?? []).map((row: any) => ({
+          id: row.id,
+          title: row.title,
+          category: row.categories?.name ?? "Unknown",
+          city: row.cities?.name ?? "Unknown",
+          media: row.ad_media?.[0]?.source_type === "youtube" ? "youtube" : "image",
+          submittedAt: new Date(row.created_at).toLocaleString(),
+        }));
+        setItems(mapped);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function approve(id: string) {
+    await fetch(`/api/moderator/ads/${id}/review`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "approve" }),
+    });
     setItems((prev) => prev.filter((x) => x.id !== id));
     toast.success("Approved content", { description: "Moved to Payment Pending stage." });
   }
 
-  function reject(id: string, reason: string) {
+  async function reject(id: string, reason: string) {
+    await fetch(`/api/moderator/ads/${id}/review`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "reject", note: reason }),
+    });
     setItems((prev) => prev.filter((x) => x.id !== id));
     toast.error("Rejected", { description: reason || "No reason provided." });
   }
@@ -69,7 +71,20 @@ export default function ModeratorReviewQueuePage() {
         <Badge variant="secondary">{items.length} pending</Badge>
       </div>
 
-      {items.length === 0 ? (
+      {loading ? (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="p-5">
+              <Skeleton className="h-6 w-2/3 skeleton-sheen" />
+              <Skeleton className="mt-3 h-4 w-1/2 skeleton-sheen" />
+              <div className="mt-4 grid gap-2">
+                <Skeleton className="h-8 w-full skeleton-sheen" />
+                <Skeleton className="h-8 w-full skeleton-sheen" />
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : items.length === 0 ? (
         <Card className="p-8 text-center">
           <p className="font-semibold">Queue cleared</p>
           <p className="mt-1 text-sm text-muted-foreground">

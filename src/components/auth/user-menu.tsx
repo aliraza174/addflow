@@ -3,7 +3,7 @@
 import * as React from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { LogOutIcon, UserIcon } from "lucide-react";
 
@@ -39,11 +39,11 @@ export function UserMenu({
         <span className="max-w-[12rem] truncate">{user.name}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[260px]">
-        <DropdownMenuLabel className="space-y-1">
+        <div className="space-y-1 px-2 py-1.5">
           <p className="text-sm font-medium leading-none">{user.name}</p>
           <p className="text-xs font-normal text-muted-foreground">{user.email}</p>
           <p className="text-xs font-normal text-muted-foreground capitalize">{user.role}</p>
-        </DropdownMenuLabel>
+        </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={logout}>
           <LogOutIcon className="mr-2 size-4" />

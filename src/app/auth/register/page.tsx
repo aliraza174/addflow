@@ -68,11 +68,20 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-full bg-[radial-gradient(1000px_circle_at_10%_-10%,theme(colors.indigo.200/40%),transparent_45%),radial-gradient(900px_circle_at_90%_0%,theme(colors.rose.200/45%),transparent_45%)] px-4 py-12">
+    <div className="relative min-h-full overflow-hidden px-4 py-12">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="float-gentle absolute left-8 top-16 h-24 w-24 rounded-full bg-violet-300/35 blur-2xl" />
+        <div className="float-gentle absolute right-12 top-36 h-28 w-28 rounded-full bg-rose-300/35 blur-2xl [animation-delay:1.1s]" />
+      </div>
       <div className="mx-auto w-full max-w-md">
         <Logo />
-        <Card className="mt-6 p-5">
-          <h1 className="text-2xl font-semibold tracking-tight">Create account</h1>
+        <Card className="mt-6 border-violet-200/70 p-5 shadow-[0_40px_90px_-35px_rgba(168,85,247,0.85)]">
+          <p className="mb-3 inline-flex rounded-full bg-gradient-to-r from-violet-500/15 via-fuchsia-500/15 to-orange-400/15 px-3 py-1 text-[11px] font-semibold tracking-wide text-violet-700 dark:text-violet-200">
+            Create Your Workspace
+          </p>
+          <h1 className="bg-gradient-to-r from-violet-700 via-fuchsia-700 to-rose-700 bg-clip-text text-3xl font-semibold tracking-tight text-transparent dark:from-violet-300 dark:via-fuchsia-300 dark:to-orange-200">
+            Create account
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             You’ll land in the client dashboard after registering.
           </p>

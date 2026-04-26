@@ -1,25 +1,22 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { jwtVerify } from "jose";
 
 const COOKIE_NAME = "adflow_session";
+const encoder = new TextEncoder();
 
-function getRoleFromCookie(req: NextRequest):
-  | "client"
-  | "moderator"
-  | "admin"
-  | "super_admin"
-  | null {
-  const raw = req.cookies.get(COOKIE_NAME)?.value;
-  if (!raw) return null;
+async function getRoleFromCookie(req: NextRequest):
+  Promise<"client" | "moderator" | "admin" | null> {
+  const token = req.cookies.get(COOKIE_NAME)?.value;
+  if (!token) return null;
+
+  const secret = process.env.AUTH_JWT_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  if (!secret) return null;
   try {
-    const parsed = JSON.parse(raw) as { user?: { role?: string } };
+    const { payload } = await jwtVerify(token, encoder.encode(secret));
+    const parsed = payload as { user?: { role?: string } };
     const role = parsed?.user?.role;
-    if (
-      role === "client" ||
-      role === "moderator" ||
-      role === "admin" ||
-      role === "super_admin"
-    ) {
+    if (role === "client" || role === "moderator" || role === "admin") {
       return role;
     }
     return null;
@@ -28,17 +25,14 @@ function getRoleFromCookie(req: NextRequest):
   }
 }
 
-function roleAtLeast(
-  role: NonNullable<ReturnType<typeof getRoleFromCookie>>,
-  required: "client" | "moderator" | "admin" | "super_admin"
-) {
-  const order = ["client", "moderator", "admin", "super_admin"] as const;
+function roleAtLeast(role: "client" | "moderator" | "admin", required: "client" | "moderator" | "admin") {
+  const order = ["client", "moderator", "admin"] as const;
   return order.indexOf(role) >= order.indexOf(required);
 }
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const role = getRoleFromCookie(req);
+  const role = await getRoleFromCookie(req);
 
   const isAuth = pathname.startsWith("/auth");
   const isProtected =
@@ -72,7 +66,7 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (pathname.startsWith("/super") && role !== "super_admin") {
+  if (pathname.startsWith("/super")) {
     const url = req.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

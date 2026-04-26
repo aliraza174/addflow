@@ -1,37 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AdFlow Pro
 
-## Getting Started
+Production-style sponsored listing marketplace with moderation, package-based ranking, payment verification workflow, scheduling/expiry automation, and analytics dashboards.
 
-First, run the development server:
+## Current Status
+
+- Premium UI shell + public pages (landing, explore, ad detail, packages, policy pages)
+- Role-protected auth flow (currently mock-cookie based)
+- Client / Moderator / Admin / Super Admin dashboards
+- Domain logic implemented:
+  - lifecycle transitions
+  - external media normalization (YouTube/image/fallback)
+  - rank score + active-only search/filter/pagination
+  - cron-like publish/expire actions
+- Mock API routes available:
+  - `GET /api/ads`
+  - `GET /api/ads/:slug`
+  - `GET /api/packages`
+  - `GET /api/questions/random`
+  - `GET /api/health/db`
+  - `POST /api/cron/publish-scheduled`
+  - `POST /api/cron/expire-ads`
+
+## Local Run
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Supabase Setup (Step-by-Step)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 1) Create project
+- Create a new Supabase project.
+- Wait until DB is provisioned.
 
-## Learn More
+### 2) Run SQL schema
+- Open Supabase **SQL Editor**.
+- Paste and run: `supabase/001_init.sql`.
+- Then run: `supabase/002_seed_roles.sql` (adds moderator/admin demo users).
+- Optional demo data: `supabase/003_seed_demo_workflow.sql`.
+- Optional hardening: `supabase/004_rls_policies.sql`.
 
-To learn more about Next.js, take a look at the following resources:
+### 3) Collect keys
+- In Supabase Project Settings > API copy:
+  - Project URL
+  - Anon key
+  - Service role key
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 4) Configure environment
+- Copy `.env.example` to `.env.local`.
+- Fill:
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+  - `SUPABASE_SERVICE_ROLE_KEY`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 5) Share keys when prompted
+- Share URL + anon first.
+- Share service role key when backend write/cron integration starts.
 
-## Deploy on Vercel
+## SQL You Need to Run in Supabase
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Run this exact file:
+- `supabase/001_init.sql`
+- `supabase/002_seed_roles.sql`
+- `supabase/003_seed_demo_workflow.sql` (optional)
+- `supabase/004_rls_policies.sql` (optional)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-"# addflow" 
+It includes:
+- enums for role/status/payment
+- core workflow tables
+- constraints + indexes
+- starter seed rows (packages/categories/cities/questions)
+"# addfow" 

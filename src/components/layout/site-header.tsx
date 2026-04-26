@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { Logo } from "@/components/brand/logo";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { MenuIcon } from "lucide-react";
+import { UserMenu } from "@/components/auth/user-menu";
 
 const nav = [
   { href: "/explore", label: "Explore" },
@@ -18,9 +20,19 @@ const nav = [
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const [session, setSession] = React.useState<{
+    user: { name: string; email: string; role: string };
+  } | null>(null);
+
+  React.useEffect(() => {
+    fetch("/api/auth/session")
+      .then((r) => r.json())
+      .then((data) => setSession(data.session ?? null))
+      .catch(() => setSession(null));
+  }, [pathname]);
 
   return (
-    <header className="sticky top-0 z-50 border-b bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50">
+    <header className="sticky top-0 z-50 border-b border-violet-200/40 bg-white/70 backdrop-blur-xl supports-[backdrop-filter]:bg-white/45 dark:border-violet-300/10 dark:bg-[#150f24]/70">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
         <Logo />
 
@@ -32,8 +44,8 @@ export function SiteHeader() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
-                  active && "bg-muted text-foreground"
+                  "rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-white/70 hover:text-foreground dark:hover:bg-white/10",
+                  active && "bg-white/85 text-foreground shadow-sm dark:bg-white/10"
                 )}
               >
                 {item.label}
@@ -46,12 +58,23 @@ export function SiteHeader() {
           <Badge variant="secondary" className="hidden lg:inline-flex">
             Moderated marketplace
           </Badge>
-          <Button asChild variant="ghost">
-            <Link href="/auth/login">Sign in</Link>
-          </Button>
-          <Button asChild>
-            <Link href="/auth/register">Create account</Link>
-          </Button>
+          {session ? (
+            <>
+              <Button asChild variant="ghost">
+                <Link href="/dashboard">Dashboard</Link>
+              </Button>
+              <UserMenu user={session.user} />
+            </>
+          ) : (
+            <>
+              <Button asChild variant="ghost">
+                <Link href="/auth/login">Sign in</Link>
+              </Button>
+              <Button asChild>
+                <Link href="/auth/register">Create account</Link>
+              </Button>
+            </>
+          )}
         </div>
 
         <div className="ml-auto md:hidden">
@@ -77,12 +100,20 @@ export function SiteHeader() {
               </div>
               <div className="border-t p-3">
                 <div className="grid gap-2">
-                  <Button asChild variant="outline">
-                    <Link href="/auth/login">Sign in</Link>
-                  </Button>
-                  <Button asChild>
-                    <Link href="/auth/register">Create account</Link>
-                  </Button>
+                  {session ? (
+                    <Button asChild>
+                      <Link href="/dashboard">Open dashboard</Link>
+                    </Button>
+                  ) : (
+                    <>
+                      <Button asChild variant="outline">
+                        <Link href="/auth/login">Sign in</Link>
+                      </Button>
+                      <Button asChild>
+                        <Link href="/auth/register">Create account</Link>
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             </SheetContent>
