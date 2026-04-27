@@ -14,9 +14,12 @@ function DropdownMenuPortal({ ...props }: MenuPrimitive.Portal.Props) {
   return <MenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />
 }
 
-function DropdownMenuTrigger({ ...props }: MenuPrimitive.Trigger.Props) {
+function DropdownMenuTrigger({ asChild, ...props }: MenuPrimitive.Trigger.Props & { asChild?: boolean }) {
+  // Base UI uses the 'render' prop instead of 'asChild'. 
+  // If asChild is passed, we should warn or handle it, but for now we just prevent it from leaking.
   return <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />
 }
+
 
 function DropdownMenuContent({
   align = "start",

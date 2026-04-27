@@ -123,10 +123,19 @@
   }
   body {
     @apply bg-background text-foreground selection:bg-primary/20 selection:text-foreground;
-    background-image:
-      radial-gradient(circle at 12% 10%, color-mix(in oklab, var(--primary) 28%, transparent), transparent 32%),
-      radial-gradient(circle at 88% 22%, color-mix(in oklab, var(--accent) 35%, transparent), transparent 34%),
-      radial-gradient(circle at 50% 100%, color-mix(in oklab, var(--chart-2) 22%, transparent), transparent 35%);
+    /* Standard CSS fallbacks for browsers that don't support modern color features */
+    background-color: var(--background);
+    background-image: 
+      radial-gradient(circle at 12% 10%, var(--primary), transparent 32%),
+      radial-gradient(circle at 88% 22%, var(--accent), transparent 34%);
+    
+    /* Modern enhanced background with oklch and color-mix */
+    @supports (color: oklch(0 0 0)) {
+      background-image:
+        radial-gradient(circle at 12% 10%, color-mix(in oklab, var(--primary) 28%, transparent), transparent 32%),
+        radial-gradient(circle at 88% 22%, color-mix(in oklab, var(--accent) 35%, transparent), transparent 34%),
+        radial-gradient(circle at 50% 100%, color-mix(in oklab, var(--chart-2) 22%, transparent), transparent 35%);
+    }
     background-attachment: fixed;
   }
   html {

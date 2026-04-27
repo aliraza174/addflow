@@ -11,6 +11,8 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { MenuIcon } from "lucide-react";
 import { UserMenu } from "@/components/auth/user-menu";
 
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+
 const nav = [
   { href: "/explore", label: "Explore" },
   { href: "/packages", label: "Packages" },
@@ -58,6 +60,9 @@ export function SiteHeader() {
           <Badge variant="secondary" className="hidden lg:inline-flex">
             Moderated marketplace
           </Badge>
+          
+          <ThemeToggle />
+
           {session ? (
             <>
               <Button asChild variant="ghost">
@@ -77,7 +82,8 @@ export function SiteHeader() {
           )}
         </div>
 
-        <div className="ml-auto md:hidden">
+        <div className="ml-auto flex items-center gap-2 md:hidden">
+          <ThemeToggle />
           <Sheet>
             <SheetTrigger
               render={<Button variant="ghost" size="icon" aria-label="Open menu" />}
@@ -123,4 +129,5 @@ export function SiteHeader() {
     </header>
   );
 }
+
 
